@@ -1,5 +1,6 @@
 const express = require('express');
 const mysql = require('mysql');
+const bcrypt = require('bcrypt');
 const db_config = require('./db_config');
 
 const app = express();
@@ -55,6 +56,113 @@ app.get('/redirecionar_para_cas', (req, res) => {
   res.redirect('/cas.html');
 });
 
+// Middleware para processar dados do formulário
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+
+// Middleware de autenticação
+function isAuthenticated(req, res, next) {
+    if (req.session && req.session.loggedin) {
+        return next(); 
+    } else {
+        res.status(401).send('Acesso não autorizado'); 
+    }
+}
+
+// Conexão com o banco de dados
+connection.connect((err) => {
+    if (err) {
+        console.error('Erro ao conectar ao banco de dados:', err.message);
+        return;
+    }
+    console.log('Conexão bem-sucedida com o banco de dados');
+});
+// Rota para recuperar_senha.html
+app.get('/recuperar_senha.html', (req, res) => {
+  res.sendFile(__dirname + '/recuperar_senha.html');
+});
+// Rota para redefinir_senha.html
+app.get('/redefinir_senha.html', (req, res) => {
+  res.sendFile(__dirname + '/redefinir_senha.html');
+});
+// Rota para solicitar a recuperação de senha
+app.post('/recuperar-senha', (req, res) => {
+    const { email } = req.body;
+    const sql = 'SELECT * FROM clientes WHERE Email = ?';
+    connection.query(sql, [email], (err, result) => {
+        if (err) {
+            console.error('Erro ao buscar usuário:', err);
+            res.status(500).send('Erro ao buscar usuário');
+            return;
+        }
+
+        if (result.length === 0) {
+            res.status(404).send('Usuário não encontrado');
+            return;
+        }
+        const token = Math.random().toString(36).substr(2);
+        const insertSql = 'INSERT INTO senha_reset (Email, Token, Expiracao) VALUES (?, ?, ?)';
+        const expirationDate = new Date(Date.now() + 3600000); // Define a expiração para 1 hora
+        connection.query(insertSql, [email, token, expirationDate], (err) => {
+            if (err) {
+                console.error('Erro ao gerar token de recuperação de senha:', err);
+                res.status(500).send('Erro ao gerar token de recuperação de senha');
+                return;
+            }
+            console.log('Token de recuperação de senha gerado com sucesso:', token);
+            res.status(200).send('Um email de recuperação foi enviado para o seu endereço de email');
+        });
+    });
+});
+
+// Rota para redefinir a senha
+app.post('/redefinir-senha', (req, res) => {
+    const { token, novaSenha } = req.body;
+    const sql = 'SELECT * FROM senha_reset WHERE Token = ? AND Expiracao > NOW()';
+    connection.query(sql, [token], (err, result) => {
+        if (err) {
+            console.error('Erro ao verificar token de recuperação de senha:', err);
+            res.status(500).send('Erro ao verificar token de recuperação de senha');
+            return;
+        }
+
+        if (result.length === 0) {
+            res.status(400).send('Token inválido ou expirado');
+            return;
+        }
+        bcrypt.hash(novaSenha, 10, (err, hash) => {
+            if (err) {
+                console.error('Erro ao gerar hash da senha:', err);
+                res.status(500).send('Erro ao redefinir senha');
+                return;
+            }
+            const email = result[0].Email;
+            const updateSql = 'UPDATE clientes SET Senha = ? WHERE Email = ?';
+            connection.query(updateSql, [hash, email], (err) => {
+                if (err) {
+                    console.error('Erro ao atualizar senha:', err);
+                    res.status(500).send('Erro ao redefinir senha');
+                    return;
+                }
+
+                console.log('Senha redefinida com sucesso')
+                const deleteSql = 'DELETE FROM senha_reset WHERE Token = ?';
+                connection.query(deleteSql, [token], (err) => {
+                    if (err) {
+                        console.error('Erro ao remover token de recuperação de senha:', err);
+                        res.status(500).send('Erro ao redefinir senha');
+                        return;
+                    }
+
+                    console.log('Token de recuperação de senha removido');
+
+                    res.status(200).send('Senha redefinida com sucesso');
+                });
+            });
+        });
+    });
+});
+
 app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
+    console.log(`Servidor rodando na porta ${port}`);
 });
