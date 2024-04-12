@@ -1,3 +1,4 @@
+const nodemailer = require('nodemailer');
 const express = require('express');
 const mysql = require('mysql');
 const bcrypt = require('bcrypt');
@@ -10,6 +11,16 @@ const connection = mysql.createConnection(db_config);
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+
+const transport = nodemailer.createTransport({
+  host:'sntp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: {
+   user: 'laurasernin@gmail.com',
+   pass:'...'
+ }
+})
 
 connection.connect((err) => {
   if (err) {
@@ -68,15 +79,6 @@ function isAuthenticated(req, res, next) {
         res.status(401).send('Acesso não autorizado'); 
     }
 }
-
-// Conexão com o banco de dados
-connection.connect((err) => {
-    if (err) {
-        console.error('Erro ao conectar ao banco de dados:', err.message);
-        return;
-    }
-    console.log('Conexão bem-sucedida com o banco de dados');
-});
 // Rota para recuperar_senha.html
 app.get('/recuperar_senha.html', (req, res) => {
   res.sendFile(__dirname + '/recuperar_senha.html');
@@ -85,6 +87,23 @@ app.get('/recuperar_senha.html', (req, res) => {
 app.get('/redefinir_senha.html', (req, res) => {
   res.sendFile(__dirname + '/redefinir_senha.html');
 });
+// Função para enviar e-mail
+function enviarEmail(destinatario, token) {
+  const mailOptions = {
+    from: "Assistente virtual <laurasernin@gmail.com>" ,
+    to: destinatario,
+    subject: 'Redefinição de Senha',
+    text: `Você solicitou a redefinição de senha. Use o seguinte token para redefinir sua senha: ${token}`
+  };
+
+  transporter.sendMail(mailOptions, function(error, info) {
+    if (error) {
+      console.error('Erro ao enviar e-mail:', error);
+    } else {
+      console.log('E-mail enviado:', info.response);
+    }
+  });
+}
 // Rota para solicitar a recuperação de senha
 app.post('/recuperar-senha', (req, res) => {
     const { email } = req.body;
@@ -109,6 +128,7 @@ app.post('/recuperar-senha', (req, res) => {
                 res.status(500).send('Erro ao gerar token de recuperação de senha');
                 return;
             }
+            enviarEmail(email,token);
             console.log('Token de recuperação de senha gerado com sucesso:', token);
             res.status(200).send('Um email de recuperação foi enviado para o seu endereço de email');
         });
@@ -157,10 +177,16 @@ app.post('/redefinir-senha', (req, res) => {
                     console.log('Token de recuperação de senha removido');
 
                     res.status(200).send('Senha redefinida com sucesso');
+
                 });
             });
         });
     });
+});
+
+// Rota para acessar a pesquisa de livros (linkada com a autenticação)
+app.get('/pesquisar-livros', isAuthenticated, (req, res) => {
+  res.sendFile(__dirname + '/pesquisar_livros.html');
 });
 
 app.listen(port, () => {

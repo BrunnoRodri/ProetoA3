@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pesquisa de Livros</title>
+</head>
+<body>
+  <h1>Pesquisa de Livros</h1>
+  <form id="formPesquisa">
+    <label for="autor">Autor:</label>
+    <input type="text" id="autor" name="autor"><br><br>
+
+    <label for="titulo">Título:</label>
+    <input type="text" id="titulo" name="titulo"><br><br>
+
+    <label for="categoria">Categoria:</label>
+    <input type="text" id="categoria" name="categoria"><br><br>
+
+    <label for="classificacao">Classificação:</label>
+    <input type="text" id="classificacao" name="classificacao"><br><br>
+
+    <button type="submit">Pesquisar</button>
+  </form>
+
+  <div id="resultadosPesquisa"></div>
+
+  <script>
+    document.getElementById('formPesquisa').addEventListener('submit', function(event) {
+      event.preventDefault();
+      
+      const autor = document.getElementById('autor').value;
+      const titulo = document.getElementById('titulo').value;
+      const categoria = document.getElementById('categoria').value;
+      const classificacao = document.getElementById('classificacao').value;
+      
+      const criterios = { autor, titulo, categoria, classificacao };
+      
+      fetch('/pesquisar-livros', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(criterios)
+      })
+      .then(response => response.json())
+      .then(resultados => {
+        const resultadosDiv = document.getElementById('resultadosPesquisa');
+        resultadosDiv.innerHTML = '';
+
+        resultados.forEach(livro => {
+          const livroDiv = document.createElement('div');
+          livroDiv.textContent = `Título: ${livro.Titulo}, Autor: ${livro.Autor}, Categoria: ${livro.Categoria}, Classificação: ${livro.Classificacao}`;
+          resultadosDiv.appendChild(livroDiv);
+        });
+      })
+      .catch(error => console.error('Erro ao pesquisar livros:', error));
+    });
+  </script>
+</body>
+</html>
