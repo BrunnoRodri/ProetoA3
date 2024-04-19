@@ -1,4 +1,4 @@
-// Função para pesquisar livros com base em vários critérios
+const db_config = require('./db_config');
 function pesquisarLivros(criterios, callback) {
   let sql = 'SELECT * FROM livros WHERE ';
 

@@ -3,6 +3,7 @@ const express = require('express');
 const mysql = require('mysql');
 const bcrypt = require('bcrypt');
 const db_config = require('./db_config');
+const reservaLivrosController = require('./ReservaLivros/ReservaLivros.js');
 
 const app = express();
 const port = 3000;
@@ -189,6 +190,21 @@ app.get('/pesquisar-livros', isAuthenticated, (req, res) => {
   res.sendFile(__dirname + '/pesquisar_livros.html');
 });
 
+app.post('/reservar-livro', isAuthenticated, (req, res) => {
+  res.sendFile(__dirname + '/reservar-livro.html');
+});
+
+// Rota para emprestar livro
+app.post('/emprestar_livro', isAuthenticated, (req, res) => {
+  res.sendFile(__dirname + '/emprestar_livro.html');
+});
+
+// Rota para devolução de livro
+app.post('/devolver_livro', isAuthenticated, (req, res) => {
+  res.sendFile(__dirname + '/emprestar_livro.html');
+});
+
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
 });
+

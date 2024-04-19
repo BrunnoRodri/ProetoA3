@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca</title>
+</head>
+<body>
+    <h1>Sistema de Biblioteca</h1>
+
+    <h2>Empréstimo de Livros</h2>
+    <form id="emprestimoForm">
+        <label for="id_livro">ID do Livro:</label>
+        <input type="text" id="id_livro" name="id_livro" required><br><br>
+        <label for="id_usuario">ID do Usuário:</label>
+        <input type="text" id="id_usuario" name="id_usuario" required><br><br>
+        <button type="submit">Emprestar Livro</button>
+    </form>
+
+    <h2>Devolução de Livros</h2>
+    <form id="devolucaoForm">
+        <label for="id_livro_dev">ID do Livro:</label>
+        <input type="text" id="id_livro_dev" name="id_livro_dev" required><br><br>
+        <button type="submit">Devolver Livro</button>
+    </form>
+
+    <script>
+        document.getElementById("emprestimoForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch('/emprestar-livro', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao emprestar livro');
+                }
+                alert('Livro emprestado com sucesso');
+                document.getElementById("emprestimoForm").reset();
+            })
+            .catch(error => {
+                console.error('Erro ao emprestar livro:', error.message);
+                alert('Erro ao emprestar livro');
+            });
+        });
+
+        document.getElementById("devolucaoForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch('/devolver-livro', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao devolver livro');
+                }
+                alert('Livro devolvido com sucesso');
+                document.getElementById("devolucaoForm").reset();
+            })
+            .catch(error => {
+                console.error('Erro ao devolver livro:', error.message);
+                alert('Erro ao devolver livro');
+            });
+        });
+    </script>
+</body>
+</html>
