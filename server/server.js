@@ -1,9 +1,8 @@
 const nodemailer = require('nodemailer');
 const express = require('express');
-const mysql = require('mysql');
+const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 const db_config = require('./db_config');
-const reservaLivrosController = require('./ReservaLivros/ReservaLivros.js');
 
 const app = express();
 const port = 3000;
@@ -97,7 +96,7 @@ function enviarEmail(destinatario, token) {
     text: `Você solicitou a redefinição de senha. Use o seguinte token para redefinir sua senha: ${token}`
   };
 
-  transporter.sendMail(mailOptions, function(error, info) {
+  transport.sendMail(mailOptions, function(error, info) {
     if (error) {
       console.error('Erro ao enviar e-mail:', error);
     } else {

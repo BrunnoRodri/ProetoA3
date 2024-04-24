@@ -1,12 +1,15 @@
 // db_config.js
 
-const mysql = require('mysql');
+const mysql = require('mysql2');
 
-const connection = mysql.createConnection({
+const config = {
   host: 'localhost',
   user: 'root',
-  password: 'banana',
-  database: 'gerenciador'
-});
+  password: '1234',
+  database: 'cadastro'
+};
 
-module.exports = connection;
+const connection = mysql.createConnection(config);
+
+module.exports = config;
+
