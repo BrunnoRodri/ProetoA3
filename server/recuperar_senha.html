@@ -1,18 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recuperar Senha</title>
-    <link rel="stylesheet" href="styles.css">
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recuperar Senha</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <form class="form-container" id="recover-form">
-            <h2>Recuperar Senha</h2>
-            <input type="email" placeholder="Email" required>
-            <button type="submit">Recuperar Senha</button>
-        </form>
-    </div>
+ <div class="container">
+ <form class="form-container" id="recover-form">
+ <h2>Recuperar Senha</h2>
+  <input type="email" id="email" placeholder="email" required> 
+  <button type="submit">Recuperar Senha</button>
+ </form>
+ </div> 
+
+ <script>
+ document.getElementById("recover-form").addEventListener("submit", function(event) {
+ event.preventDefault(); 
+
+ 
+ const email = document.getElementById("email").value; 
+
+ fetch('/recuperar-senha', {
+ method: 'POST',
+ headers: {
+ 'Content-Type': 'application/json'
+ },
+ body: JSON.stringify({ email: email })
+ })
+ .then(response => {
+ if (response.ok) {
+ alert('Um email de recuperação foi enviado para o seu endereço de email');
+} else {
+
+alert('Erro ao recuperar senha. Por favor, tente novamente mais tarde.');
+}
+})
+ .catch(error => {
+console.error('Erro:', error);
+ alert('Erro ao recuperar senha. Por favor, tente novamente mais tarde.');
+ });
+ });
+</script>
 </body>
 </html>
