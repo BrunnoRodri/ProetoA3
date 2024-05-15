@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Principal</title>
+</head>
+<body>
+    <h1>Lista de Livros</h1>
+    <div class="livros-container" id="livros-container">
+        <!-- Os livros serão renderizados aqui -->
+    </div>
+
+    <div id="error-message" style="color: red;"></div> <!-- Div para exibir mensagens de erro -->
+
+    <script>
+        // Função para fazer uma requisição AJAX para obter os livros do servidor
+        function getLivros() {
+            fetch('/livros')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao obter lista de livros: ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => renderizarLivros(data))
+                .catch(error => {
+                    console.error(error);
+                    document.getElementById('error-message').textContent = error.message;
+                });
+        }
+
+        // Função para renderizar os livros
+        function renderizarLivros(livros) {
+            const container = document.getElementById('livros-container');
+            container.innerHTML = '';
+
+            livros.forEach(livro => {
+                const divLivro = document.createElement('div');
+                divLivro.classList.add('livro');
+                divLivro.innerHTML = `
+                    <h2>${livro.nome}</h2>
+                    <p><strong>Autor:</strong> ${livro.autor}</p>
+                    <p><strong>Preço:</strong> ${livro.preco}</p>
+                    <p><strong>Estoque:</strong> ${livro.estoque}</p>
+                    <button onclick="comprarLivro('${livro.nome}', ${livro.preco}, ${livro.estoque})">Comprar</button>
+                `;
+                container.appendChild(divLivro);
+            });
+        }
+
+        // Função para simular a compra do livro
+        function comprarLivro(nomeLivro, precoLivro, estoqueLivro) {
+            alert(`Você comprou o livro ${nomeLivro} por R$ ${precoLivro}. Estoque: ${estoqueLivro}`);
+        }
+
+        // Chama a função para obter os livros ao carregar a página
+        getLivros();
+    </script>
+</body>
+</html>

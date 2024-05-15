@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Administração</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #DEB887; /* Cor de fundo */
+        }
+        h1 {
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .button {
+            margin-bottom: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Painel de Administração</h1>
+
+<div class="container">
+    <button class="button" onclick="window.location.href='cadastrar_livros.html'">Cadastrar Livros</button>
+    <button class="button" onclick="window.location.href='remover_livros.html'">Remover Livros</button>
+    <button class="button" onclick="window.location.href='cadastrar_administrador.html'">Cadastrar Administrador</button>
+    <button class="button" onclick="window.location.href='remover_administrador.html'">Remover Administrador</button>
+</div>
+
+</body>
+</html>
