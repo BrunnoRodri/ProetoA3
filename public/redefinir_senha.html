@@ -1,19 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redefinir Senha</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #DEB887; /* Cor de fundo */
+        }
+        .container {
+            width: 300px;
+            margin: 100px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background-color: #007bff; /* Cor do botão */
+            color: #fff;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <form class="form-container" id="reset-form">
-            <h2>Redefinir Senha</h2>
-            <input type="password" placeholder="Nova Senha" required>
-            <input type="password" placeholder="Confirme a Nova Senha" required>
+        <h2>Redefinir Senha</h2>
+        <form id="resetForm">
+            <label for="token">Token:</label>
+            <input type="text" id="token" name="token" required><br><br>
+            <label for="novaSenha">Nova Senha:</label>
+            <input type="password" id="novaSenha" name="novaSenha" required><br><br>
             <button type="submit">Redefinir Senha</button>
         </form>
     </div>
+
+    <script>
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const token = document.getElementById('token').value;
+            const novaSenha = document.getElementById('novaSenha').value;
+
+            try {
+                const response = await fetch('/redefinir-senha', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token, novaSenha })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message); // Mostra mensagem de sucesso
+                    // Redirecionar para a página de login ou outra página
+                } else {
+                    alert(data.error); // Mostra mensagem de erro
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao redefinir senha. Por favor, tente novamente mais tarde.');
+            }
+        });
+    </script>
 </body>
 </html>

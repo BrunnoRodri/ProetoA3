@@ -6,6 +6,7 @@
     "express-session": "^1.18.0",
     "mysql": "^2.18.1",
     "mysql2": "^3.9.7",
-    "nodemailer": "^6.9.13"
+    "nodemailer": "^6.9.13",
+    "stripe": "^15.7.0"
   }
 }

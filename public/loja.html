@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loja de Livros</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #DEB887; /* Cor de fundo */
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        .livros-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        .livro-item {
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin: 10px;
+            padding: 20px;
+            width: calc(30% - 40px);
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .livro-item h2 {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .livro-item p {
+            margin: 5px 0;
+        }
+        .comprar-button,
+        .reservar-button {
+            display: inline-block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+        }
+        .reservar-button {
+            background-color: #ff6347; /* Cor do botão Reservar */
+        }
+        .comprar-button:hover {
+            background-color: #0056b3;
+        }
+        .reservar-button:hover {
+            background-color: #e5533d;
+        }
+        #pagamento-container {
+            display: none;
+            margin-top: 20px;
+        }
+        #card-element {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-bottom: 10px;
+        }
+        #submit-button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background-color: #28a745; /* Cor do botão Pagar */
+            color: #fff;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        #submit-button:hover {
+            background-color: #218838;
+        }
+        #card-errors {
+            color: red;
+            margin-top: 10px;
+        }
+        #carrinho-container {
+            margin-top: 20px;
+        }
+        .carrinho-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+        }
+        .remover-button {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .remover-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Loja de Livros</h1>
+        <div id="loja-container" class="livros-container">
+            <!-- Os itens do livro serão renderizados aqui -->
+        </div>
+        <div id="carrinho-container">
+            <h2>Carrinho de Compras</h2>
+            <div id="carrinho-itens"></div>
+            <button id="finalizar-compra-button">Finalizar Compra</button>
+        </div>
+        <div id="pagamento-container">
+            <h2>Informações de Pagamento</h2>
+            <form id="pagamento-form">
+                <div id="card-element"></div>
+                <button id="submit-button" type="submit">Pagar</button>
+            </form>
+            <div id="card-errors" role="alert"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const response = await fetch('/livros');
+            const livros = await response.json();
+
+            const lojaContainer = document.getElementById('loja-container');
+            livros.forEach(livro => {
+                const livroItem = document.createElement('div');
+                livroItem.classList.add('livro-item');
+                livroItem.innerHTML = `
+                    <h2>${livro.nome}</h2>
+                    <p>Autor: ${livro.autor}</p>
+                    <p>Preço: R$ ${(livro.preco / 100).toFixed(2)}</p>
+                    <p>Estoque: ${livro.estoque}</p>
+                    ${livro.estoque > 0
+                        ? `<button class="comprar-button" data-id="${livro.id}">Adicionar ao Carrinho</button>`
+                        : `<button class="reservar-button" data-id="${livro.id}">Reservar</button>`}
+                `;
+                lojaContainer.appendChild(livroItem);
+            });
+
+            document.querySelectorAll('.comprar-button').forEach(button => {
+                button.addEventListener('click', async () => {
+                    const livroId = button.getAttribute('data-id');
+                    const quantidade = 1;
+
+                    const response = await fetch('/adicionar-ao-carrinho', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ livroId, quantidade })
+                    });
+
+                    if (response.ok) {
+                        alert('Livro adicionado ao carrinho');
+                        carregarCarrinho();
+                    } else {
+                        alert('Erro ao adicionar livro ao carrinho');
+                    }
+                });
+            });
+
+            document.querySelectorAll('.reservar-button').forEach(button => {
+                button.addEventListener('click', async () => {
+                    const livroId = button.getAttribute('data-id');
+                    const email = prompt("Por favor, insira seu email para reservar este livro:");
+
+                    if (!email) {
+                        alert("Email é necessário para reservar o livro.");
+                        return;
+                    }
+
+                    const response = await fetch('/reservar-livro', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ livroId, email })
+                    });
+
+                    if (response.ok) {
+                        alert('Livro reservado com sucesso');
+                    } else {
+                        alert('Erro ao reservar livro');
+                    }
+                });
+            });
+
+            const stripe = Stripe('sua_chave_publica_do_stripe'); // Substitua pela sua chave pública do Stripe
+            const elements = stripe.elements();
+            const cardElement = elements.create('card');
+            cardElement.mount('#card-element');
+
+            document.getElementById('finalizar-compra-button').addEventListener('click', () => {
+                document.getElementById('pagamento-container').style.display = 'block';
+            });
+
+            const form = document.getElementById('pagamento-form');
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const response = await fetch('/comprar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                const clientSecret = data.clientSecret;
+
+                const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+                    payment_method: {
+                        card: cardElement
+                    }
+                });
+
+                if (error) {
+                    document.getElementById('card-errors').textContent = error.message;
+                } else {
+                    alert('Pagamento realizado com sucesso!');
+                }
+            });
+
+            async function carregarCarrinho() {
+                const response = await fetch('/carrinho');
+                const carrinho = await response.json();
+
+                const carrinhoItens = document.getElementById('carrinho-itens');
+                carrinhoItens.innerHTML = '';
+
+                carrinho.forEach(item => {
+                    const carrinhoItem = document.createElement('div');
+                    carrinhoItem.classList.add('carrinho-item');
+                    carrinhoItem.innerHTML = `
+                        <span>${item.nome} - R$ ${(item.preco / 100).toFixed(2)} x ${item.quantidade}</span>
+                        <button class="remover-button" data-id="${item.id}">Remover</button>
+                    `;
+                    carrinhoItens.appendChild(carrinhoItem);
+                });
+
+                document.querySelectorAll('.remover-button').forEach(button => {
+                    button.addEventListener('click', async () => {
+                        const livroId = button.getAttribute('data-id');
+
+                        const response = await fetch('/remover-do-carrinho', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ livroId })
+                        });
+
+                        if (response.ok) {
+                            alert('Livro removido do carrinho');
+                            carregarCarrinho();
+                        } else {
+                            alert('Erro ao remover livro do carrinho');
+                        }
+                    });
+                });
+            }
+
+            carregarCarrinho();
+        });
+    </script>
+</body>
+</html>
+
