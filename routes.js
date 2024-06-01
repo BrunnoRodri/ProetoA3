@@ -6,7 +6,7 @@ const session = require('express-session');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcrypt');
-const stripe = require('stripe')('pk_test_51PHYcWEgxOfM3CbTWufDz6MOtC4Zg9B8HknIpVi6Kmk5jDGpGWBe8CIHdbdTVmQsSIzU4gocb3hT8R64xSwwll9a00qeqyhDPh'); // Substitua pela sua chave secreta do Stripe
+const stripe = require('stripe')('sk_test_51PHYcWEgxOfM3CbTqok5nxlgYNVNYFrIRPsJBgiFq7ICx5UaCLVSZFLvhfFdThypQyV0ducA7LG0I49Or4QCZ8oW00T9SBMgiX'); // Substitua pela sua chave secreta do Stripe
 
 const connection = mysql.createConnection(db_config);
 
@@ -31,7 +31,7 @@ connection.connect((err) => {
 
 // Rota para obter os dados dos livros em formato JSON
 router.get('/livros', (req, res) => {
-  const sql = 'SELECT nome, autor, preco, estoque FROM livros';
+  const sql = 'SELECT id, nome, autor, preco, estoque FROM livros';
   connection.query(sql, (err, result) => {
     if (err) {
       console.error('Erro ao buscar livros:', err);
@@ -93,6 +93,16 @@ router.post('/login', (req, res) => {
     }
   });
 });
+
+// Rota para página principal da loja
+router.get('/loja', (req, res) => {
+  if (req.session.loggedin) {
+      res.sendFile(path.join(__dirname, 'public', 'loja.html'));
+  } else {
+      res.redirect('/login.html'); // Redireciona para a página de login se não estiver logado
+  }
+});
+
 
 // Função para enviar e-mail
 const transporter = nodemailer.createTransport({
@@ -215,73 +225,99 @@ router.get('/loja', (req, res) => {
   });
 });
 
-// Rota para criar a intenção de pagamento
+// Rota para criar a intenção de pagamento e atualizar o estoque
 router.post('/comprar', async (req, res) => {
   const { livroId, quantidade } = req.body;
-  const sql = 'SELECT preco FROM livros WHERE id = ?';
-  connection.query(sql, [livroId], async (err, result) => {
-    if (err) {
-      console.error('Erro ao buscar preço do livro:', err);
-      res.status(500).json({ error: 'Erro ao buscar preço do livro' });
-      return;
-    }
+  const sqlSelect = 'SELECT preco, estoque FROM livros WHERE id = ?';
+  connection.query(sqlSelect, [livroId], async (err, result) => {
+      if (err) {
+          console.error('Erro ao buscar preço do livro:', err);
+          res.status(500).json({ error: 'Erro ao buscar preço do livro' });
+          return;
+      }
 
-    if (result.length === 0) {
-      res.status(404).json({ error: 'Livro não encontrado' });
-      return;
-    }
+      if (result.length === 0) {
+          res.status(404).json({ error: 'Livro não encontrado' });
+          return;
+      }
 
-    const preco = result[0].preco;
-    const valor = preco * quantidade;
+      const preco = result[0].preco;
+      const estoque = result[0].estoque;
 
-    try {
-      const intencaoPagamento = await stripe.paymentIntents.create({
-        amount: valor * 100, // Stripe espera valores em centavos
-        currency: 'brl',
-      });
+      if (estoque < quantidade) {
+          res.status(400).json({ error: 'Estoque insuficiente' });
+          return;
+      }
 
-      res.status(200).send({
-        clientSecret: intencaoPagamento.client_secret,
-      });
-    } catch (erro) {
-      res.status(500).send({
-        erro: erro.message,
-      });
-    }
+      const valor = preco * quantidade;
+
+      try {
+          const intencaoPagamento = await stripe.paymentIntents.create({
+              amount: valor * 100, // Stripe espera valores em centavos
+              currency: 'brl',
+          });
+
+          // Atualizar o estoque do livro
+          const novoEstoque = estoque - quantidade;
+          const sqlUpdate = 'UPDATE livros SET estoque = ? WHERE id = ?';
+          connection.query(sqlUpdate, [novoEstoque, livroId], (err, result) => {
+              if (err) {
+                  console.error('Erro ao atualizar o estoque do livro:', err);
+                  res.status(500).json({ error: 'Erro ao atualizar o estoque do livro' });
+                  return;
+              }
+
+              res.status(200).send({
+                  clientSecret: intencaoPagamento.client_secret,
+              });
+          });
+      } catch (erro) {
+          res.status(500).send({
+              erro: erro.message,
+          });
+      }
   });
 });
 
-//Rota para adicionar ao carrinho
+
+
 router.post('/adicionar-ao-carrinho', (req, res) => {
   const { livroId, quantidade } = req.body;
+  console.log(`Recebido livroId: ${livroId}, quantidade: ${quantidade}`);
+
+  if (!livroId || !quantidade) {
+      return res.status(400).json({ error: 'livroId e quantidade são obrigatórios' });
+  }
+
   const sql = 'SELECT id, nome, autor, preco FROM livros WHERE id = ?';
   connection.query(sql, [livroId], (err, result) => {
-    if (err) {
-      console.error('Erro ao buscar livro:', err);
-      res.status(500).json({ error: 'Erro ao buscar livro' });
-      return;
-    }
+      if (err) {
+          console.error('Erro ao buscar livro:', err);
+          res.status(500).json({ error: 'Erro ao buscar livro' });
+          return;
+      }
 
-    if (result.length === 0) {
-      res.status(404).json({ error: 'Livro não encontrado' });
-      return;
-    }
+      if (result.length === 0) {
+          console.log(`Livro com id ${livroId} não encontrado`);
+          res.status(404).json({ error: 'Livro não encontrado' });
+          return;
+      }
 
-    const livro = result[0];
-    const item = {
-      id: livro.id,
-      nome: livro.nome,
-      autor: livro.autor,
-      preco: livro.preco,
-      quantidade: quantidade,
-    };
+      const livro = result[0];
+      const item = {
+          id: livro.id,
+          nome: livro.nome,
+          autor: livro.autor,
+          preco: livro.preco,
+          quantidade: quantidade,
+      };
 
-    if (!req.session.carrinho) {
-      req.session.carrinho = [];
-    }
+      if (!req.session.carrinho) {
+          req.session.carrinho = [];
+      }
 
-    req.session.carrinho.push(item);
-    res.status(200).json({ message: 'Livro adicionado ao carrinho' });
+      req.session.carrinho.push(item);
+      res.status(200).json({ message: 'Livro adicionado ao carrinho' });
   });
 });
 
@@ -291,16 +327,19 @@ router.get('/carrinho', (req, res) => {
   res.json(carrinho);
 });
 
-// Rota para remover um item do carrinho
 router.post('/remover-do-carrinho', (req, res) => {
   const { livroId } = req.body;
+
   if (!req.session.carrinho) {
     return res.status(400).json({ error: 'Carrinho vazio' });
   }
 
-  req.session.carrinho = req.session.carrinho.filter(item => item.id !== livroId);
+  // Convertendo livroId para número antes de comparar
+  req.session.carrinho = req.session.carrinho.filter(item => item.id !== parseInt(livroId, 10));
+
   res.status(200).json({ message: 'Livro removido do carrinho' });
 });
+
 
 // Rota para reservar um livro
 router.post('/reservar-livro', (req, res) => {
@@ -383,6 +422,5 @@ router.post('/atualizar-estoque', (req, res) => {
       }
   });
 });
-module.exports = router;
 
-
+module.exports = router; 
