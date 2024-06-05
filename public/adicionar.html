@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adicionar Livro</title>
+    <style>
+        body {
+            background-color: #DEB887;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        .mensagem-erro {
+            text-align: center;
+            margin-top: 10px;
+            color: red;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <form id="formulario">
+        <h1>Adicionar Livro</h1>
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome">
+        
+        <label for="autor">Autor:</label>
+        <input type="text" id="autor" name="autor">
+        
+        <label for="preco">Preço:</label>
+        <input type="text" id="preco" name="preco">
+        
+        <label for="estoque">Estoque:</label>
+        <input type="text" id="estoque" name="estoque">
+        
+        <input type="button" value="Adicionar Livro" id="botao-adicionar">
+    </form>
+    
+    <div id="mensagem-erro" class="mensagem-erro"></div>
+
+    <script>
+        document.getElementById('botao-adicionar').addEventListener('click', function() {
+            var nome = document.getElementById('nome').value;
+            var autor = document.getElementById('autor').value;
+            var preco = document.getElementById('preco').value;
+            var estoque = document.getElementById('estoque').value;
+
+            var dados = {
+                nome: nome,
+                autor: autor,
+                preco: preco,
+                estoque: estoque
+            };
+
+            fetch('/adicionarLivro', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dados)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao adicionar livro.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Livro adicionado com sucesso!');
+                // Aqui você pode adicionar qualquer ação desejada após a adição do livro
+            })
+            .catch(error => {
+                console.error('Erro ao adicionar livro:', error.message);
+                exibirErro('Erro ao adicionar livro: ' + error.message);
+            });
+        });
+
+        function exibirErro(mensagem) {
+            var elementoErro = document.getElementById('mensagem-erro');
+            elementoErro.textContent = mensagem;
+            elementoErro.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

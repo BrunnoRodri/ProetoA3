@@ -23,34 +23,40 @@
         text-align: center;
     }
     input[type="text"],
-    input[type="password"] {
+    input[type="password"],
+    input[type="submit"],
+    .btn-administrador,
+    .btn-cadastrar,
+    .btn-recuperar-senha {
         width: calc(100% - 20px);
         padding: 10px;
         margin-bottom: 10px;
         border: 1px solid #ccc;
         border-radius: 3px;
-    }
-    input[type="submit"] {
-        width: 100%;
-        padding: 10px;
-        border: none;
-        background-color: #007bff; /* Cor do botão Entrar */
-        color: #fff;
-        border-radius: 3px;
-        cursor: pointer;
-    }
-    .btn-cadastrar, .btn-recuperar-senha {
-        display: block;
+        display: inline-block;
         text-align: center;
-        padding: 10px;
-        background-color: #add8e6; /* Cor do botão */
-        color: #0000ff; /* Cor do texto */
-        border-radius: 3px;
+        box-sizing: border-box; /* Adicionado para ajustar o tamanho corretamente */
+    }
+    input[type="submit"],
+    .btn-administrador,
+    .btn-cadastrar,
+    .btn-recuperar-senha {
+        background-color: #007bff; /* Cor do botão */
+        color: #fff;
         cursor: pointer;
-        margin-top: 10px;
         text-decoration: none; /* Remover sublinhado */
     }
-    .btn-cadastrar:hover, .btn-recuperar-senha:hover {
+    .btn-administrador {
+        background-color: #007bff; /* Cor do botão Administrador */
+        color: #fff;
+    }
+    .btn-cadastrar,
+    .btn-recuperar-senha {
+        background-color: #add8e6; /* Cor do botão */
+        color: #0000ff; /* Cor do texto */
+    }
+    .btn-cadastrar:hover,
+    .btn-recuperar-senha:hover {
         background-color: #87ceeb; /* Cor do botão ao passar o mouse */
     }
 </style>
@@ -66,6 +72,7 @@
     </form>
     <a href="cas.html" class="btn-cadastrar">Cadastrar</a>
     <a href="recuperar_senha.html" class="btn-recuperar-senha">Esqueci minha senha</a>
+    <a href="admlog.html" class="btn-administrador">Área do Administrador</a>
 </div>
 
 </body>

@@ -70,13 +70,36 @@ router.post('/cadastrar', (req, res) => {
     res.status(200).send('Usuário criado com sucesso');
   });
 });
+// Rota para login de administrador
+router.post('/login-adm', (req, res) => {
+    const { administrador, senha } = req.body;
+  
+    const sql = 'SELECT * FROM adm WHERE administrador = ? AND senha = ?';
+    const values = [administrador, senha];
+  
+    connection.query(sql, values, (err, results) => {
+      if (err) {
+        console.error('Erro ao fazer login:', err);
+        res.status(500).send('Erro ao fazer login');
+        return;
+      }
+  
+      if (results.length === 0) {
+        res.status(401).send('Administrador ou senha incorretos');
+      } else {
+        req.session.adminLoggedin = true;
+        res.redirect('/paineladm.html'); // Redireciona para a página paineladm.html
+      }
+    });
+  });
+  
 
 // Rota para login de usuário
 router.post('/login', (req, res) => {
-  const { administrador, senha } = req.body;
+  const { cpf, senha } = req.body;
 
-  const sql = 'SELECT * FROM adm WHERE administrador = ? AND senha = ?';
-  const values = [administrador, senha];
+  const sql = 'SELECT * FROM clientes WHERE cpf = ? AND senha = ?';
+  const values = [cpf, senha];
 
   connection.query(sql, values, (err, results) => {
     if (err) {
@@ -86,10 +109,10 @@ router.post('/login', (req, res) => {
     }
 
     if (results.length === 0) {
-      res.status(401).send('Administrador ou senha incorretos');
+      res.status(401).send('CPF ou senha incorretos');
     } else {
       req.session.loggedin = true;
-      res.redirect('/paineladm.html'); // Redireciona para a página paineladm.html
+      res.redirect('/loja.html'); // Redireciona para a página loja.html
     }
   });
 });
@@ -423,4 +446,73 @@ router.post('/atualizar-estoque', (req, res) => {
   });
 });
 
+
+
+// Rota para página de adicionar livro
+router.get('/adicionar.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'adicionar.html'));
+});
+
+// Rota para adicionar livro
+router.post('/adicionarLivro', (req, res) => {
+  const { nome, autor, preco, estoque } = req.body;
+
+  const sql = 'INSERT INTO livros (nome, autor, preco, estoque) VALUES (?, ?, ?, ?)';
+  const values = [nome, autor, preco, estoque];
+
+  connection.query(sql, values, (err, results) => {
+      if (err) {
+          console.error('Erro ao adicionar livro:', err);
+          res.status(500).json({ error: 'Erro ao adicionar livro: ' + err.message });
+          return;
+      }
+
+      console.log('Livro adicionado com sucesso!');
+      res.status(200).json({ message: 'Livro adicionado com sucesso!' });
+  });
+});
+
+// Rota para listar livros
+router.get('/listarLivros', (req, res) => {
+const sql = 'SELECT id, nome FROM livros ORDER BY nome ASC';
+
+connection.query(sql, (err, results) => {
+    if (err) {
+        console.error('Erro ao listar livros:', err);
+        res.status(500).json({ error: 'Erro ao listar livros: ' + err.message });
+        return;
+    }
+
+    res.status(200).json({ livros: results });
+});
+});
+
+// Rota para remover livro
+router.post('/removerLivro', (req, res) => {
+const { id } = req.body;
+
+const sql = 'DELETE FROM livros WHERE id = ?';
+const values = [id];
+
+connection.query(sql, values, (err, results) => {
+    if (err) {
+        console.error('Erro ao remover livro:', err);
+        res.status(500).json({ error: 'Erro ao remover livro: ' + err.message });
+        return;
+    }
+
+    console.log('Livro removido com sucesso!');
+    res.status(200).json({ message: 'Livro removido com sucesso!' });
+});
+});
+// Rota para página de remover livro
+router.get('/remover.html', (req, res) => {
+res.sendFile(path.join(__dirname, '..', 'public', 'remover.html'));
+});
+
 module.exports = router; 
+
+
+
+
+

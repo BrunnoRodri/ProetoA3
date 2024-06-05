@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remover Livro</title>
+    <style>
+        body {
+            background-color: #DEB887;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        input[type="button"] {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        input[type="button"]:hover {
+            background-color: #45a049;
+        }
+        .mensagem {
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+        .mensagem-erro {
+            color: red;
+        }
+        .mensagem-sucesso {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <form id="formulario">
+        <h1>Remover Livro</h1>
+        <label for="livros">Selecione o Livro:</label>
+        <select id="livros" name="livros">
+            <!-- Livros serão carregados aqui -->
+        </select>
+        
+        <input type="button" value="Remover Livro" id="botao-remover">
+    </form>
+    
+    <div id="mensagem" class="mensagem"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/listarLivros')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar livros.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const selectLivros = document.getElementById('livros');
+                    data.livros.forEach(livro => {
+                        const option = document.createElement('option');
+                        option.value = livro.id;
+                        option.textContent = livro.nome;
+                        selectLivros.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar livros:', error.message);
+                    exibirMensagem('Erro ao carregar livros: ' + error.message, 'erro');
+                });
+        });
+
+        document.getElementById('botao-remover').addEventListener('click', function() {
+            const livroId = document.getElementById('livros').value;
+
+            fetch('/removerLivro', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: livroId })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao remover livro.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Livro removido com sucesso!');
+                exibirMensagem('Livro removido com sucesso!', 'sucesso');
+                // Remover o livro do select
+                const selectLivros = document.getElementById('livros');
+                const optionToRemove = selectLivros.querySelector(`option[value='${livroId}']`);
+                selectLivros.removeChild(optionToRemove);
+            })
+            .catch(error => {
+                console.error('Erro ao remover livro:', error.message);
+                exibirMensagem('Erro ao remover livro: ' + error.message, 'erro');
+            });
+        });
+
+        function exibirMensagem(mensagem, tipo) {
+            var elementoMensagem = document.getElementById('mensagem');
+            elementoMensagem.textContent = mensagem;
+            elementoMensagem.className = 'mensagem mensagem-' + tipo;
+            elementoMensagem.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
