@@ -3,6 +3,7 @@ const session = require('express-session');
 const routes = require('./routes');
 const path = require('path');
 const app = express();
+require('dotenv').config();
 const port = 3000;
 
 // Configuração do middleware para parsing de URL-encoded bodies

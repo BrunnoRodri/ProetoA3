@@ -76,6 +76,7 @@
                 if (response.ok) {
                     alert(data.message); // Mostra mensagem de sucesso
                     // Redirecionar para a página de login ou outra página
+                    window.location.href = '/login.html';
                 } else {
                     alert(data.error); // Mostra mensagem de erro
                 }

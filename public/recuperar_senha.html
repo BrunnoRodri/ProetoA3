@@ -41,6 +41,13 @@
     button:hover {
       background-color: #0056b3;
     }
+    .btn-redefinir {
+      background-color: #28a745; /* Cor do botão Redefinir Senha */
+      margin-top: 10px;
+    }
+    .btn-redefinir:hover {
+      background-color: #218838;
+    }
   </style>
 </head>
 <body>
@@ -50,6 +57,7 @@
       <input type="email" id="email" placeholder="Email" required>
       <button type="submit">Recuperar Senha</button>
     </form>
+    <button class="btn-redefinir" id="redefinir-senha-button">Redefinir Senha</button>
   </div>
 
   <script>
@@ -77,8 +85,11 @@
         alert('Erro ao recuperar senha. Por favor, tente novamente mais tarde.');
       });
     });
+
+    document.getElementById("redefinir-senha-button").addEventListener("click", function() {
+      window.location.href = 'redefinir_senha.html';
+    });
   </script>
 </body>
 </html>
-
 

@@ -116,7 +116,7 @@
             background-color: #c82333;
         }
     </style>
-    <script src="https://js.stripe.com/v3/"></script>
+<script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
     <div class="container">
@@ -155,7 +155,7 @@
                     <p>Estoque: ${livro.estoque}</p>
                     ${livro.estoque > 0
                         ? `<button class="comprar-button" data-id="${livro.id}">Adicionar ao Carrinho</button>`
-                        : `<button class="reservar-button" data-id="${livro.id }">Reservar</button>`}
+                        : `<button class="reservar-button" data-id="${livro.id}">Reservar</button>`}
                 `;
                 lojaContainer.appendChild(livroItem);
             });
@@ -184,7 +184,7 @@
                     }
                 });
             });
-
+            
             document.querySelectorAll('.reservar-button').forEach(button => {
                 button.addEventListener('click', async () => {
                     const livroId = button.getAttribute('data-id');
@@ -265,9 +265,16 @@
             form.addEventListener('submit', async (event) => {
                 event.preventDefault();
 
-                // Supondo que você está enviando o ID do livro e a quantidade aqui
-                const livroId = 1; // Obtenha o ID do livro do carrinho ou seleção
-                const quantidade = 1; // Defina a quantidade ou obtenha do carrinho
+                const carrinho = await fetch('/carrinho').then(response => response.json());
+                if (carrinho.length === 0) {
+                    alert('O carrinho está vazio.');
+                    return;
+                }
+
+                // Vamos assumir que você está comprando apenas um item no carrinho para simplificação
+                const item = carrinho[0];
+                const livroId = item.id;
+                const quantidade = item.quantidade;
 
                 // Obter o client secret do backend
                 const response = await fetch('/comprar', {
@@ -296,9 +303,10 @@
                     document.getElementById('card-errors').textContent = error.message;
                 } else {
                     alert('Pagamento realizado com sucesso!');
+                    // Após pagamento bem-sucedido, você pode recarregar o carrinho ou redirecionar o usuário
+                    carregarCarrinho();
                 }
             });
-        
         });
     </script>
 </body>

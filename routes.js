@@ -6,7 +6,8 @@ const session = require('express-session');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcrypt');
-const stripe = require('stripe')('sk_test_51PHYcWEgxOfM3CbTqok5nxlgYNVNYFrIRPsJBgiFq7ICx5UaCLVSZFLvhfFdThypQyV0ducA7LG0I49Or4QCZ8oW00T9SBMgiX'); // Substitua pela sua chave secreta do Stripe
+require('dotenv').config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // Substitua pela sua chave secreta do Stripe
 
 const connection = mysql.createConnection(db_config);
 
@@ -129,16 +130,19 @@ router.get('/loja', (req, res) => {
 
 // Função para enviar e-mail
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+ service: 'gmail',
   auth: {
-    user: 'laurasernin@gmail.com',
-    pass: 'sua_senha' // Substitua pela sua senha do Gmail
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS // Substitua pela sua senha do Gmail
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
 function enviarEmail(destinatario, token) {
   const mailOptions = {
-    from: "Assistente virtual <laurasernin@gmail.com>",
+    from: "Assistente virtual <process.env.EMAIL_USER>",
     to: destinatario,
     subject: 'Redefinição de Senha',
     text: `Você solicitou a redefinição de senha. Use o seguinte token para redefinir sua senha: ${token}`
@@ -185,52 +189,51 @@ router.post('/recuperar-senha', (req, res) => {
   });
 });
 
-// Rota para redefinir a senha
 router.post('/redefinir-senha', (req, res) => {
   const { token, novaSenha } = req.body;
+
   const sql = 'SELECT * FROM senha_reset WHERE Token = ? AND Expiracao > NOW()';
   connection.query(sql, [token], (err, result) => {
-    if (err) {
-      console.error('Erro ao verificar token de recuperação de senha:', err);
-      res.status(500).send('Erro ao verificar token de recuperação de senha');
-      return;
-    }
-
-    if (result.length === 0) {
-      res.status(400).send('Token inválido ou expirado');
-      return;
-    }
-
-    bcrypt.hash(novaSenha, 10, (err, hash) => {
       if (err) {
-        console.error('Erro ao gerar hash da senha:', err);
-        res.status(500).send('Erro ao redefinir senha');
-        return;
+          console.error('Erro ao verificar token de recuperação de senha:', err);
+          res.status(500).json({ error: 'Erro ao verificar token de recuperação de senha' });
+          return;
       }
 
-      const email = result[0].Email;
-      const updateSql = 'UPDATE clientes SET Senha = ? WHERE Email = ?';
-      connection.query(updateSql, [hash, email], (err) => {
-        if (err) {
-          console.error('Erro ao atualizar senha:', err);
-          res.status(500).send('Erro ao redefinir senha');
+      if (result.length === 0) {
+          res.status(400).json({ error: 'Token inválido ou expirado' });
           return;
-        }
+      }
 
-        console.log('Senha redefinida com sucesso');
-        const deleteSql = 'DELETE FROM senha_reset WHERE Token = ?';
-        connection.query(deleteSql, [token], (err) => {
+      bcrypt.hash(novaSenha, 10, (err, hash) => {
           if (err) {
-            console.error('Erro ao remover token de recuperação de senha:', err);
-            res.status(500).send('Erro ao redefinir senha');
-            return;
+              console.error('Erro ao gerar hash da senha:', err);
+              res.status(500).json({ error: 'Erro ao redefinir senha' });
+              return;
           }
 
-          console.log('Token de recuperação de senha removido');
-          res.status(200).send('Senha redefinida com sucesso');
-        });
+          const email = result[0].Email;
+          const updateSql = 'UPDATE clientes SET Senha = ? WHERE Email = ?';
+          connection.query(updateSql, [hash, email], (err) => {
+              if (err) {
+                  console.error('Erro ao atualizar senha:', err);
+                  res.status(500).json({ error: 'Erro ao redefinir senha' });
+                  return;
+              }
+
+              const deleteSql = 'DELETE FROM senha_reset WHERE Token = ?';
+              connection.query(deleteSql, [token], (err) => {
+                  if (err) {
+                      console.error('Erro ao remover token de recuperação de senha:', err);
+                      res.status(500).json({ error: 'Erro ao redefinir senha' });
+                      return;
+                  }
+
+                  console.log('Senha redefinida com sucesso');
+                  res.status(200).json({ message: 'Senha redefinida com sucesso' });
+              });
+          });
       });
-    });
   });
 });
 
