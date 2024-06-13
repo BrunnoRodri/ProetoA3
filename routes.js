@@ -253,56 +253,44 @@ router.get('/loja', (req, res) => {
 
 // Rota para criar a intenção de pagamento e atualizar o estoque
 router.post('/comprar', async (req, res) => {
-  const { livroId, quantidade } = req.body;
-  const sqlSelect = 'SELECT preco, estoque FROM livros WHERE id = ?';
-  connection.query(sqlSelect, [livroId], async (err, result) => {
-      if (err) {
-          console.error('Erro ao buscar preço do livro:', err);
-          res.status(500).json({ error: 'Erro ao buscar preço do livro' });
-          return;
+  const itensCarrinho = req.body.itensCarrinho;
+
+  try {
+      let valorTotal = 0;
+      for (const item of itensCarrinho) {
+          const { livroId, quantidade } = item;
+          const [result] = await connection.promise().query('SELECT preco, estoque FROM livros WHERE id = ?', [livroId]);
+
+          if (result.length === 0) {
+              return res.status(404).json({ error: `Livro com id ${livroId} não encontrado` });
+          }
+
+          const livro = result[0];
+          if (livro.estoque < quantidade) {
+              return res.status(400).json({ error: `Estoque insuficiente para o livro com id ${livroId}` });
+          }
+
+          valorTotal += livro.preco * quantidade;
+
+          const novoEstoque = livro.estoque - quantidade;
+          await connection.promise().query('UPDATE livros SET estoque = ? WHERE id = ?', [novoEstoque, livroId]);
       }
 
-      if (result.length === 0) {
-          res.status(404).json({ error: 'Livro não encontrado' });
-          return;
-      }
+      const intencaoPagamento = await stripe.paymentIntents.create({
+          amount: valorTotal * 100, // Stripe espera valores em centavos
+          currency: 'brl',
+      });
 
-      const preco = result[0].preco;
-      const estoque = result[0].estoque;
+      res.status(200).send({
+          clientSecret: intencaoPagamento.client_secret,
+      });
 
-      if (estoque < quantidade) {
-          res.status(400).json({ error: 'Estoque insuficiente' });
-          return;
-      }
-
-      const valor = preco * quantidade;
-
-      try {
-          const intencaoPagamento = await stripe.paymentIntents.create({
-              amount: valor * 100, // Stripe espera valores em centavos
-              currency: 'brl',
-          });
-
-          // Atualizar o estoque do livro
-          const novoEstoque = estoque - quantidade;
-          const sqlUpdate = 'UPDATE livros SET estoque = ? WHERE id = ?';
-          connection.query(sqlUpdate, [novoEstoque, livroId], (err, result) => {
-              if (err) {
-                  console.error('Erro ao atualizar o estoque do livro:', err);
-                  res.status(500).json({ error: 'Erro ao atualizar o estoque do livro' });
-                  return;
-              }
-
-              res.status(200).send({
-                  clientSecret: intencaoPagamento.client_secret,
-              });
-          });
-      } catch (erro) {
-          res.status(500).send({
-              erro: erro.message,
-          });
-      }
-  });
+  } catch (erro) {
+      console.error('Erro ao processar compra:', erro);
+      res.status(500).send({
+          erro: erro.message,
+      });
+  }
 });
 
 

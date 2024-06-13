@@ -252,62 +252,69 @@
 
             carregarCarrinho();
 
-            const stripe = Stripe('pk_test_51PHYcWEgxOfM3CbTWufDz6MOtC4Zg9B8HknIpVi6Kmk5jDGpGWBe8CIHdbdTVmQsSIzU4gocb3hT8R64xSwwll9a00qeqyhDPh'); // Substitua pela sua chave pública do Stripe
-            const elements = stripe.elements();
-            const cardElement = elements.create('card');
-            cardElement.mount('#card-element');
+    const stripe = Stripe('pk_test_51PHYcWEgxOfM3CbTWufDz6MOtC4Zg9B8HknIpVi6Kmk5jDGpGWBe8CIHdbdTVmQsSIzU4gocb3hT8R64xSwwll9a00qeqyhDPh'); // Substitua pela sua chave pública do Stripe
+    const elements = stripe.elements();
+    const cardElement = elements.create('card');
+    cardElement.mount('#card-element');
 
-            document.getElementById('finalizar-compra-button').addEventListener('click', () => {
-                document.getElementById('pagamento-container').style.display = 'block';
-            });
+    document.getElementById('finalizar-compra-button').addEventListener('click', () => {
+        document.getElementById('pagamento-container').style.display = 'block';
+    });
 
-            const form = document.getElementById('pagamento-form');
-            form.addEventListener('submit', async (event) => {
-                event.preventDefault();
+    const form = document.getElementById('pagamento-form');
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
 
-                const carrinho = await fetch('/carrinho').then(response => response.json());
-                if (carrinho.length === 0) {
-                    alert('O carrinho está vazio.');
-                    return;
-                }
+        const carrinhoResponse = await fetch('/carrinho');
+        const carrinho = await carrinhoResponse.json();
 
-                // Vamos assumir que você está comprando apenas um item no carrinho para simplificação
-                const item = carrinho[0];
-                const livroId = item.id;
-                const quantidade = item.quantidade;
+        if (carrinho.length === 0) {
+            alert('O carrinho está vazio.');
+            return;
+        }
 
-                // Obter o client secret do backend
-                const response = await fetch('/comprar', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ livroId, quantidade }) // Enviar livroId e quantidade corretamente
-                });
+        const itensCarrinho = carrinho.map(item => ({
+            livroId: item.id,
+            quantidade: item.quantidade
+        }));
 
-                const data = await response.json();
-                const clientSecret = data.clientSecret;
-
-                if (!clientSecret) {
-                    console.error('Erro: clientSecret não recebido do backend');
-                    return;
-                }
-
-                const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-                    payment_method: {
-                        card: cardElement,
-                    }
-                });
-
-                if (error) {
-                    document.getElementById('card-errors').textContent = error.message;
-                } else {
-                    alert('Pagamento realizado com sucesso!');
-                    // Após pagamento bem-sucedido, você pode recarregar o carrinho ou redirecionar o usuário
-                    carregarCarrinho();
-                }
-            });
+        const response = await fetch('/comprar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ itensCarrinho })
         });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            alert(`Erro: ${errorData.error}`);
+            return;
+        }
+
+        const data = await response.json();
+        const clientSecret = data.clientSecret;
+
+        if (!clientSecret) {
+            console.error('Erro: clientSecret não recebido do backend');
+            return;
+        }
+
+        const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+                card: cardElement,
+            }
+        });
+
+        if (error) {
+            document.getElementById('card-errors').textContent = error.message;
+        } else {
+            alert('Pagamento realizado com sucesso!');
+            carregarCarrinho();
+        }
+    });
+});
+
     </script>
 </body>
 </html>
