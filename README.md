@@ -73,7 +73,65 @@ Se você quiser contribuir com o projeto, siga estas etapas:
 5. Crie um Pull Request.
 
 ## Acessar
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+//suasenha
+DB_NAME=
+//sua database
 
+STRIPE_SECRET_KEY=
+//sk_test_51PHYcWEgxOfM3CbTqok5nxlgYNVNYFrIRPsJBgiFq7ICx5UaCLVSZFLvhfFdThypQyV0ducA7LG0I49Or4QCZ8oW00T9SBMgiX
+STRIPE_PUBLIC_KEY=
+//pk_test_51PHYcWEgxOfM3CbTWufDz6MOtC4Zg9B8HknIpVi6Kmk5jDGpGWBe8CIHdbdTVmQsSIzU4gocb3hT8R64xSwwll9a00qeqyhDPh
+
+EMAIL_USER=Laurasernin@gmail.com
+EMAIL_PASSWORD=
+//crcntzbapfadzibo
+
+CREATE TABLE reservas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    livro_id INT,
+    email VARCHAR(100),
+    FOREIGN KEY (livro_id) REFERENCES livros(id)
+);
+
+
+CREATE TABLE senha_reset (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(100),
+    token VARCHAR(255),
+    expiracao DATETIME
+);
+
+
+CREATE TABLE livros (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100),
+    autor VARCHAR(100),
+    preco DECIMAL(10, 2),
+    estoque INT
+);
+
+
+
+CREATE TABLE adm (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    administrador VARCHAR(100),
+    senha VARCHAR(255)
+);
+
+
+
+CREATE TABLE clientes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100),
+    cpf VARCHAR(14),
+    cep VARCHAR(9),
+    senha VARCHAR(255),
+    cidade VARCHAR(100),
+    email VARCHAR(100)
+);
 ## Licença
 
 Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
